@@ -27,8 +27,9 @@ namespace Nidalee
         private static void Game_OnGameLoad(EventArgs args)
         {
             Player = ObjectManager.Player;
-            Console.WriteLine(Player.BaseSkinName);
-            if (!Player.BaseSkinName.ToLower().Contains("nidalee")) return;
+            if (Player.ChampionName != "Nidalee") return;
+
+            Game.PrintChat("Nidaleek loaded.");
 
             #region Config Spells
 
