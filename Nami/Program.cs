@@ -15,12 +15,10 @@ namespace Nami
         private static Menu Menu;
         private static Orbwalking.Orbwalker Orbwalker;
         private static Spell Q, W, E, R;
-        private static List<Spell> SpellList = new List<Spell>();
 
         private static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
-            Console.Clear();
         }
 
         private static void Game_OnGameLoad(EventArgs args)
@@ -39,14 +37,15 @@ namespace Nami
 
             Menu.AddSubMenu(new Menu("Combo", "combo"));
             Menu.SubMenu("combo").AddItem(new MenuItem("comboQ", "Use Q").SetValue(true));
-            Menu.SubMenu("combo").AddItem(new MenuItem("comboW", "Use W").SetValue(new StringList(new[] {"Don't Cast", "Force Bounce", "Heal", "Damage"}, 0)));
-            Menu.SubMenu("combo").AddItem(new MenuItem("comboE", "Use E").SetValue(new StringList(new[] {"Don't Cast", "Most AD", "Any Ally", "Self"}, 1)));
+            Menu.SubMenu("combo").AddItem(new MenuItem("comboW", "Use W").SetValue(new StringList(new[] { "Don't Cast", "Force Bounce", "Heal", "Damage" }, 0)));
+            Menu.SubMenu("combo").AddItem(new MenuItem("comboE", "Use E").SetValue(new StringList(new[] { "Don't Cast", "Most AD", "Any Ally", "Self" }, 1)));
             Menu.SubMenu("combo").AddItem(new MenuItem("comboR", "Use R (Enemies)").SetValue(new Slider(3, 0, 5)));
 
             Menu.AddSubMenu(new Menu("Harass", "harass"));
             Menu.SubMenu("harass").AddItem(new MenuItem("harassQ", "Use Q (Max Chance)").SetValue(true));
-            Menu.SubMenu("harass").AddItem(new MenuItem("harassW", "Use W").SetValue(new StringList(new[] {"Don't Cast", "Force Bounce", "Heal", "Damage"}, 0)));
-            
+            Menu.SubMenu("harass").AddItem(new MenuItem("harassW", "Use W").SetValue(new StringList(new[] { "Don't Cast", "Force Bounce", "Heal", "Damage" }, 0)));
+            Menu.SubMenu("harass").AddItem(new MenuItem("harassFarm", "Block farm").SetValue(true));
+
             Menu.AddSubMenu(new Menu("Passive", "passive"));
             Menu.SubMenu("passive").AddItem(new MenuItem("passiveHeal", "Auto Heal (%)").SetValue(new Slider(40, 0, 100)));
             Menu.SubMenu("passive").AddItem(new MenuItem("passiveAutoQ", "Auto Q (Max Chance)").SetValue(true));
@@ -70,7 +69,7 @@ namespace Nami
             E = new Spell(SpellSlot.E, 800f);
             R = new Spell(SpellSlot.R, 2200f);
 
-            Q.SetSkillshot(0.5f, 200f, 1750f, false, SkillshotType.SkillshotCircle);
+            Q.SetSkillshot(1.0f, 200f, Int32.MaxValue, false, SkillshotType.SkillshotCircle);
             R.SetSkillshot(0.5f, 325f, 1200f, false, SkillshotType.SkillshotLine);
 
             Game.OnGameUpdate += Game_OnGameUpdate;
@@ -78,7 +77,8 @@ namespace Nami
             AntiGapcloser.OnEnemyGapcloser += AntiGapcloser_OnEnemyGapcloser;
             Interrupter.OnPosibleToInterrupt += Interrupter_OnPosibleToInterrupt;
 
-            Game.PrintChat("Namik loaded.");
+            Game.PrintChat("<font color=\"#FF6600\">>> Namik loaded.</font>");
+            Orbwalking.BeforeAttack += Orbwalking_BeforeAttack;
         }
 
         private static void Game_OnGameUpdate(EventArgs args)
@@ -107,18 +107,24 @@ namespace Nami
             var drawR = Menu.Item("drawR").GetValue<Circle>();
 
             if (drawQ.Active)
-                Drawing.DrawCircle(Player.Position, Q.Range, drawQ.Color);
+                Utility.DrawCircle(Player.Position, Q.Range, drawQ.Color);
 
             if (drawW.Active)
-                Drawing.DrawCircle(Player.Position, W.Range, drawW.Color);
+                Utility.DrawCircle(Player.Position, W.Range, drawW.Color);
 
             if (drawE.Active)
-                Drawing.DrawCircle(Player.Position, E.Range, drawE.Color);
+                Utility.DrawCircle(Player.Position, E.Range, drawE.Color);
 
             if (drawR.Active)
-                Drawing.DrawCircle(Player.Position, R.Range, drawR.Color);
+                Utility.DrawCircle(Player.Position, R.Range, drawR.Color);
+            
+        }
 
-
+        static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args)
+        {
+            bool AllyNear = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValid && hero.IsAlly && !hero.IsMe && hero.Distance(args.Unit) < Orbwalking.GetRealAutoAttackRange(hero)).Count() > 0;
+            if (Orbwalker.ActiveMode.ToString() == "Mixed" && args.Target.IsMinion && AllyNear && Menu.Item("harassFarm").GetValue<bool>())
+                args.Process = false;
         }
 
         private static void Perform_Combo()
@@ -129,29 +135,28 @@ namespace Nami
             var comboW = Menu.Item("comboW").GetValue<StringList>();
             var comboE = Menu.Item("comboE").GetValue<StringList>();
             var comboR = Menu.Item("comboR").GetValue<Slider>();
-            Console.WriteLine("Q Range: {0}", Q.Range);
             
             if (Q.IsReady() && comboQ)
             {
-                Console.WriteLine("CastQ " + Target.ChampionName);
-                Q.Cast(Target);
+                Q.CastIfHitchanceEquals(Target, HitChance.High);
             }
-            else if (W.IsReady() && comboW.SelectedIndex > 0)
+
+            if (W.IsReady() && comboW.SelectedIndex > 0)
             {
                 switch (comboW.SelectedIndex)
                 {
                     case 1: // Both
-                        Obj_AI_Hero BounceAlly = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Distance(Target) < 375f && hero.Distance(Player) < W.Range && hero.IsValid && hero.IsEnemy).ToArray()[0];
+                        Obj_AI_Hero BounceAlly = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Distance(Target) < W.Range && hero.Distance(Player) < W.Range && hero.IsValid && hero.IsEnemy).ToArray()[0];
 
-                        if (BounceAlly != null && (BounceAlly.Health < HealAmmount() || Target.Distance(Player) > W.Range))
+                        if (BounceAlly != null && (BounceAlly.MaxHealth - BounceAlly.Health > HealAmmount() || Target.Distance(Player) > W.Range))
                             W.CastOnUnit(BounceAlly);
-                        else if (Target.Distance(BounceAlly) < 375f && Target.Distance(Player) < W.Range)
+                        else if (Target.Distance(BounceAlly) < W.Range && Target.IsValidTarget(W.Range))
                             W.CastOnUnit(Target);
 
                         break;
 
                     case 2: // Heal
-                        Obj_AI_Hero HealAlly = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Distance(Player) < W.Range && hero.IsValid && hero.IsEnemy && hero.Health <= HealAmmount()).OrderBy(hero => hero.Health).ToArray()[0];
+                        Obj_AI_Hero HealAlly = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Distance(Player) < W.Range && hero.IsValid && hero.IsEnemy && hero.MaxHealth - hero.Health > HealAmmount()).OrderBy(hero => hero.Health).ToArray()[0];
 
                         if (HealAlly != null)
                             W.CastOnUnit(HealAlly);
@@ -165,7 +170,8 @@ namespace Nami
                         break;
                 }
             }
-            else if (E.IsReady() && comboE.SelectedIndex > 0)
+
+            if (E.IsReady() && comboE.SelectedIndex > 0)
             {
                 switch (comboE.SelectedIndex)
                 {
@@ -183,7 +189,8 @@ namespace Nami
                         break;
                 }
             }
-            else if (R.IsReady() && comboR.Value > 0)
+            
+            if (R.IsReady() && comboR.Value > 0)
                 R.CastIfWillHit(Target, comboR.Value);
         }
 
@@ -198,16 +205,17 @@ namespace Nami
             {
                 Q.Cast(Target);
             }
-            else if(W.IsReady() && harassW.SelectedIndex > 0)
+
+            if(W.IsReady() && harassW.SelectedIndex > 0)
             {
                 switch (harassW.SelectedIndex)
                 {
                     case 1: // Both
-                        Obj_AI_Hero BounceAlly = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Distance(Target) < 375f && hero.Distance(Player) < W.Range && hero.IsValid && hero.IsEnemy).ToArray()[0];
+                        Obj_AI_Hero BounceAlly = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Distance(Target) < W.Range && hero.Distance(Player) < W.Range && hero.IsValid && hero.IsEnemy).ToArray()[0];
 
-                        if (BounceAlly != null && (BounceAlly.Health < HealAmmount() || Target.Distance(Player) > W.Range))
+                        if (BounceAlly != null && (BounceAlly.MaxHealth - BounceAlly.Health > HealAmmount() || Target.Distance(Player) > W.Range))
                             W.CastOnUnit(BounceAlly);
-                        else if (Target.Distance(BounceAlly) < 375f && Target.Distance(Player) < W.Range)
+                        else if (Target.Distance(BounceAlly) < W.Range && Target.Distance(Player) < W.Range)
                             W.CastOnUnit(Target);
 
                         break;
@@ -228,20 +236,29 @@ namespace Nami
                 }
             }
         }
+
         private static void Passive()
         {
             if (Player.HasBuff("Recall")) return;
 
-            int passiveHeal = Menu.Item("passiveHeal").GetValue<int>();
-            if(passiveHeal > 0)
+            var passiveHeal = Menu.Item("passiveHeal").GetValue<Slider>();
+
+            if(passiveHeal.Value > 0 && W.IsReady())
             {
-                Obj_AI_Hero Ally = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Health < (hero.MaxHealth * passiveHeal / 100) && hero.IsValid && hero.IsAlly).OrderBy(hero => hero.Health).ToArray()[0];
+                Obj_AI_Hero Ally = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.Health < (hero.MaxHealth * passiveHeal.Value / 100) && hero.IsValid && hero.IsAlly && hero.MaxHealth - hero.Health > HealAmmount()).OrderBy(hero => hero.Health).ToArray()[0];
+                if (Ally != null)
+                    W.CastOnUnit(Ally);
             }
 
-            /* broken ? */
             if (Q.IsReady() && Menu.Item("passiveAutoQ").GetValue<bool>())
-                Q.Cast(ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(Q.Range) && hero.IsEnemy && (hero.IsDashing() || hero.IsImmovable)).ToArray()[0]); 
-            
+            {
+                foreach (Obj_AI_Hero Enemy in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && hero.IsValidTarget(Q.Range)))
+                {
+                    PredictionOutput Predict = Prediction.GetPrediction(Enemy, Q.Delay, Q.Width, Q.Speed);
+                    if (Predict.Hitchance == HitChance.Dashing || Predict.Hitchance == HitChance.Immobile)
+                        Q.Cast(Predict.CastPosition.To2D());
+                }
+            }
         }
 
         /* Not sure if this is working properly */
