@@ -282,7 +282,8 @@ namespace Nidalee
 
         private static bool IsCougar()
         {
-            return Player.BaseSkinName == "Nidalee" ? false : true;
+            // return Player.BaseSkinName == "Nidalee" ? false : true;
+			return Player.Spellbook.GetSpell(SpellSlot.Q).SData.Name == "JavelinToss" ? false : true;
         }
     }
 }
