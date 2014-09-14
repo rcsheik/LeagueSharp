@@ -30,3 +30,8 @@ Nidalee
 * Full Combo [Q;W;E;R;Items]
 * Harass [Human: Q;W]
 * Lane/Jungle Clear [Cougar: Q;W;E // Human: E] 
+
+
+Surrender Tracker
+===========
+Shows what your allies voted.
