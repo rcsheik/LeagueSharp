@@ -267,7 +267,7 @@ namespace Talon
                 Damage += DamageLib.getDmg(target, DamageLib.SpellType.R);
 
             // Double AA + SOTD
-            int SOTDbonus = SOTD.IsReady() && useSOTD ? 1 : 2;
+            int SOTDbonus = SOTD.IsReady() && useSOTD ? 2 : 1;
             Damage += ((DamageLib.getDmg(target, DamageLib.SpellType.AD) * 1.1 * (Q.IsReady() ? 2 : 1)) * SOTDbonus);
 
 
