@@ -243,7 +243,7 @@ namespace Talon
 
         private static float GetComboDamage(Obj_AI_Base target)
         {
-            double Damage = 0;
+            double DamageDealt = 0;
 
             var useQ = Menu.Item("combo_Q").GetValue<bool>();
             var useW = Menu.Item("combo_W").GetValue<bool>();
@@ -256,37 +256,38 @@ namespace Talon
 
             // Q
             if(Q.IsReady() && useQ)
-                Damage += DamageLib.getDmg(target, DamageLib.SpellType.Q, DamageLib.StageType.FirstDamage);
+                DamageDealt += DamageDealt += Player.GetSpellDamage(target, SpellSlot.Q);
+            
 
             // W
             if(W.IsReady() && useW)
-                Damage += DamageLib.getDmg(target, DamageLib.SpellType.W);
+                DamageDealt += Player.GetSpellDamage(target, SpellSlot.W);
 
             // R
-            if(E.IsReady() && (useR || useRUSH))
-                Damage += DamageLib.getDmg(target, DamageLib.SpellType.R);
+            if(R.IsReady() && (useR || useRUSH))
+                DamageDealt += Player.GetSpellDamage(target, SpellSlot.R);
 
             // Double AA + SOTD
             int SOTDbonus = SOTD.IsReady() && useSOTD ? 2 : 1;
-            Damage += ((DamageLib.getDmg(target, DamageLib.SpellType.AD) * 1.1 * (Q.IsReady() ? 2 : 1)) * SOTDbonus);
+            DamageDealt += ((Player.GetAutoAttackDamage(target) * 1.1 * (Q.IsReady() ? 2 : 1)) * SOTDbonus);
 
 
             //  Tiamat
             if (TMT.IsReady() && useTMT)
-                Damage += DamageLib.getDmg(target, DamageLib.SpellType.TIAMAT);
+                DamageDealt += Player.GetItemDamage(target, Damage.DamageItems.Tiamat);
 
 
             // Hydra
             if (HYD.IsReady() && useHYD)
-                Damage += DamageLib.getDmg(target, DamageLib.SpellType.HYDRA);
+                DamageDealt += Player.GetItemDamage(target, Damage.DamageItems.Hydra);
 
             // E damage amplification
             double[] Amp = { 0, 1.03, 1.06, 1.09, 1.12, 1.15 };
 
             if(E.IsReady() && useE)
-                Damage += Damage * Amp[E.Level];
+                DamageDealt += DamageDealt * Amp[E.Level];
 
-            return (float) Damage;
+            return (float)DamageDealt;
         }
 
     }
