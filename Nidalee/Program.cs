@@ -78,8 +78,10 @@ namespace Nidalee
             Menu.SubMenu("combo").AddItem(new MenuItem("combo_Q2", "Takedown").SetValue(true));
             Menu.SubMenu("combo").AddItem(new MenuItem("combo_W2", "Pounce").SetValue(true));
             Menu.SubMenu("combo").AddItem(new MenuItem("combo_E2", "Swipe").SetValue(true));
+            Menu.SubMenu("combo").AddItem(new MenuItem("combo_info3", "Extra Functions:"));
             Menu.SubMenu("combo").AddItem(new MenuItem("combo_R", "Auto Switch Forms").SetValue(true));
             Menu.SubMenu("combo").AddItem(new MenuItem("combo_Items", "Use Items").SetValue(true));
+            Menu.SubMenu("combo").AddItem(new MenuItem("combo_UT", "Jump to turret range").SetValue(true));
 
 
             // Harass
@@ -190,11 +192,13 @@ namespace Nidalee
                 if(Items.CanUseItem(Bork.Id)) Bork.Cast(Target);
                 if(Items.CanUseItem(Cutlass.Id)) Cutlass.Cast(Target);
             }
+
+            var comboUT = Menu.Item("combo_UT").GetValue<bool>();
             
             /* Human Form */
             if(!IsCougar()) 
             {
-                if (Marked && R.IsReady() && Menu.Item("combo_R").GetValue<bool>() && Distance < 750f || (!Q1.IsReady() && !Q1.IsReady(2500) && Target.Distance(Player) < 300f))
+                if (Marked && R.IsReady() && Menu.Item("combo_R").GetValue<bool>() && Distance < 750f || (!Q1.IsReady() && !Q1.IsReady(2500) && Target.Distance(Player) < 300f) && (Utility.UnderTurret(Target, true) ? comboUT : true))
                     R.Cast();
 
                 else if (Q1.IsReady() && Menu.Item("combo_Q1").GetValue<bool>())
@@ -211,15 +215,13 @@ namespace Nidalee
             {
                 if (!Marked && R.IsReady() && Menu.Item("combo_R").GetValue<bool>() && Distance < W2.Range + 75f)
                     R.Cast();
-                else if (Marked && Hunting && W2.IsReady() && Menu.Item("combo_W2").GetValue<bool>() && Distance < 750f && Distance > 200f)
+                else if (Marked && Hunting && W2.IsReady() && Menu.Item("combo_W2").GetValue<bool>() && Distance < 750f && Distance > 200f && (Utility.UnderTurret(Target, true) ? comboUT : true))
                     Player.Spellbook.CastSpell(SpellSlot.W, Target);
                 else if (E2.IsReady() && Distance < 300f)
                 {
                     var Pred = Prediction.GetPrediction(Target, 0.5f);
                     E2.Cast(Pred.CastPosition, true);
                 }
-                /*else if (Q2.IsReady() && Menu.Item("combo_Q2").GetValue<bool>())
-                    Q2.Cast(Target);*/
             }
         }
 
@@ -230,7 +232,8 @@ namespace Nidalee
             {
                 if (Q1.IsReady() && Menu.Item("harass_Q1").GetValue<bool>())
                     Q1.Cast(Target, true);
-                else if (W1.IsReady() && Menu.Item("harass_W1").GetValue<bool>())
+
+                if (W1.IsReady() && Menu.Item("harass_W1").GetValue<bool>())
                     W1.Cast(Target, true);
             }
         }
