@@ -58,7 +58,7 @@ namespace Yorick
                 Menu.SubMenu("combo").AddItem(new MenuItem("combo_I", "Ignite").SetValue(true));
 
                 Menu.AddSubMenu(new Menu("Harass", "harass"));
-                Menu.SubMenu("harass").AddItem(new MenuItem("harass_E", "E"));
+                Menu.SubMenu("harass").AddItem(new MenuItem("harass_E", "E").SetValue(true));
                 Menu.SubMenu("harass").AddItem(new MenuItem("harass_W", "W").SetValue(true));
                 Menu.SubMenu("harass").AddItem(new MenuItem("harass_mn", "Required MN.").SetValue(new Slider(40)));
 
