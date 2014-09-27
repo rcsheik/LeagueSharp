@@ -109,6 +109,7 @@ namespace Nidalee
             Menu.AddSubMenu(new Menu("Drawings", "drawings"));
             Menu.SubMenu("drawings").AddItem(new MenuItem("draw_info1", "Human Form:"));
             Menu.SubMenu("drawings").AddItem(new MenuItem("draw_Q1", "Javelin Toss").SetValue(new Circle(true, System.Drawing.Color.White)));
+			Menu.SubMenu("drawings").AddItem(new MenuItem("draw_Q1MaxDmg", "Javelin Toss: Max DMG").SetValue(new Circle(true, System.Drawing.Color.White)));
             Menu.SubMenu("drawings").AddItem(new MenuItem("draw_W1", "Bushwhack").SetValue(new Circle(true, System.Drawing.Color.White)));
             Menu.SubMenu("drawings").AddItem(new MenuItem("draw_E1", "Primal Surge").SetValue(new Circle(true, System.Drawing.Color.White)));
             Menu.SubMenu("drawings").AddItem(new MenuItem("draw_info2", "Cougar Form:"));
@@ -156,6 +157,7 @@ namespace Nidalee
 
         private static void Drawing_OnDraw(EventArgs args)
         {
+			var drawQ1MD = Menu.Item("draw_Q1MaxDmg").GetValue<Circle>();
             var drawQ1 = Menu.Item("draw_Q1").GetValue<Circle>();
             var drawW1 = Menu.Item("draw_W1").GetValue<Circle>();
             var drawE1 = Menu.Item("draw_E1").GetValue<Circle>();
@@ -165,6 +167,9 @@ namespace Nidalee
 
             if (drawQ1.Active && (drawCF && !IsCougar() || !drawCF))
                 Utility.DrawCircle(Player.Position, Q1.Range, drawQ1.Color);
+				
+			if (drawQ1MD.Active && (drawCF && !IsCougar() || !drawCF))
+				Utility.DrawCircle(Player.Position, 1300f, drawQ1MD.Color);
 
             if (drawW1.Active && (drawCF && !IsCougar() || !drawCF))
                 Utility.DrawCircle(Player.Position, W1.Range, drawW1.Color);
