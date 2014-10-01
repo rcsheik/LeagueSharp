@@ -31,7 +31,8 @@ namespace Talon
             Player = ObjectManager.Player;
             if (Player.ChampionName != "Talon") return;
 
-            Game.PrintChat("Talon assemlby loaded! :^)");
+            Game.PrintChat("<font color=\"#0066FF\">[<font color=\"#FFFFFF\">madk</font>]</font><font color=\"#FFFFFF\"> Talon assembly loaded! :^)</font>");
+
 
             Menu = new Menu("Talon", "Talon", true);
 
@@ -184,12 +185,12 @@ namespace Talon
                 E.CastOnUnit(Target);
             else if (W.IsReady() && Target.IsValidTarget(W.Range) && useW)
                 W.Cast(Target.Position);
-            else if (R.IsReady() && Target.IsValidTarget(R.Range) && useR && DamageLib.getDmg(Target, DamageLib.SpellType.R) > Target.Health)
+            else if (R.IsReady() && Target.IsValidTarget(R.Range) && useR && R.GetDamage(Target) > Target.Health)
                 R.Cast();
             
             // Auto Ignite
             if(useI && Ignite != SpellSlot.Unknown && Player.SummonerSpellbook.CanUseSpell(Ignite) == SpellState.Ready)
-                foreach(var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && hero.IsValidTarget(600f) && !hero.IsDead && hero.Health < DamageLib.getDmg(hero, DamageLib.SpellType.IGNITE)).OrderByDescending(hero => SimpleTs.GetPriority(hero)))
+                foreach(var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && hero.IsValidTarget(600f) && !hero.IsDead && hero.Health < Player.GetSummonerSpellDamage(hero, Damage.SummonerSpell.Ignite)).OrderByDescending(hero => SimpleTs.GetPriority(hero)))
                 {
                     Player.SummonerSpellbook.CastSpell(Ignite, enemy);
                     return;
@@ -256,16 +257,16 @@ namespace Talon
 
             // Q
             if(Q.IsReady() && useQ)
-                DamageDealt += DamageDealt += Player.GetSpellDamage(target, SpellSlot.Q);
+                DamageDealt += DamageDealt += Q.GetDamage(target);
             
 
             // W
             if(W.IsReady() && useW)
-                DamageDealt += Player.GetSpellDamage(target, SpellSlot.W);
+                DamageDealt += W.GetDamage(target);
 
             // R
             if(R.IsReady() && (useR || useRUSH))
-                DamageDealt += Player.GetSpellDamage(target, SpellSlot.R);
+                DamageDealt += R.GetDamage(target);
 
             // Double AA + SOTD
             int SOTDbonus = SOTD.IsReady() && useSOTD ? 2 : 1;

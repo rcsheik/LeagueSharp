@@ -177,7 +177,7 @@ namespace Yorick
 
             // Auto Ignite
             if (useI && Ignite != SpellSlot.Unknown && Player.SummonerSpellbook.CanUseSpell(Ignite) == SpellState.Ready)
-                foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && hero.IsValidTarget(600f) && !hero.IsDead && hero.Health < DamageLib.getDmg(hero, DamageLib.SpellType.IGNITE)).OrderByDescending(hero => SimpleTs.GetPriority(hero)))
+                foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && hero.IsValidTarget(600f) && !hero.IsDead && hero.Health < Player.GetSummonerSpellDamage(hero, Damage.SummonerSpell.Ignite)).OrderByDescending(hero => SimpleTs.GetPriority(hero)))
                 {
                     Player.SummonerSpellbook.CastSpell(Ignite, enemy);
                     return;

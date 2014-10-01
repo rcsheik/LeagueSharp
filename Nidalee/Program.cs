@@ -28,7 +28,7 @@ namespace Nidalee
             Player = ObjectManager.Player;
             if (Player.ChampionName != "Nidalee") return;
 
-            Game.PrintChat("Nidaleek loaded.");
+            Game.PrintChat("<font color=\"#0066FF\">[<font color=\"#FFFFFF\">madk</font>]</font><font color=\"#FFFFFF\"> Nidalee assembly loaded! :^)</font>");
 
             #region Config Spells
 
@@ -272,7 +272,7 @@ namespace Nidalee
 
             if (ks_Q1 && !IsCougar())
             {
-                var Q1Enemy = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && !hero.IsDead && !hero.IsMinion && hero.IsValidTarget(Q1.Range) && hero.Health < DamageLib.getDmg(hero, DamageLib.SpellType.Q));
+                var Q1Enemy = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(Q1.Range) && hero.Health < Q1.GetDamage(hero));
 
                 if (Q1.IsReady() && Q1Enemy.Count() > 0)
                     Q1.Cast(Q1Enemy.ToArray()[0]);
@@ -280,7 +280,7 @@ namespace Nidalee
 
             if (ks_dot && Ignite != SpellSlot.Unknown)
             {
-                var dotEnemy = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy && !hero.IsDead && !hero.IsMinion && hero.IsValidTarget(600f) && hero.Health < DamageLib.getDmg(hero, DamageLib.SpellType.IGNITE) && hero.HasBuff("SummonerDot", true));
+                var dotEnemy = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(600f) && hero.Health < Player.GetSummonerSpellDamage(hero, Damage.SummonerSpell.Ignite) && hero.HasBuff("SummonerDot", true));
                 if (Player.Spellbook.GetSpell(Ignite).State == SpellState.Ready && dotEnemy.Count() > 0)
                 {
                     Player.Spellbook.CastSpell(Ignite, dotEnemy.ToArray()[0]);
