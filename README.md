@@ -31,6 +31,23 @@ Nidalee
 * Harass [Human: Q;W]
 * Lane/Jungle Clear [Cougar: Q;W;E // Human: E] 
 
+Rengar
+===========
+### Features:
+* Full Combo [Q;W;E;Items]
+* Harass [W;E]
+* Lane/Jungle Clear [Q;W;E]
+* Last Hit [W;E]
+* Save 5 Ferocity in Lane/Jungle clear if Ultimate is Ready
+* Ferocity spell configurable for each combo
+
+Godyr
+===========
+### Features
+* Phoenix combo
+* Lane/Jungle clear
+(That's all you need to play udyr ![Kappa](http://www.chatslang.com/images/shortcuts/twitch/admins/kappa.png)) 
+
 
 Surrender Tracker
 ===========
