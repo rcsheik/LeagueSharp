@@ -233,7 +233,8 @@ namespace Nidalee
         private static void Perform_Harass()
         {
             var Target = SimpleTs.GetTarget(Q1.Range, SimpleTs.DamageType.Magical);
-            if(!IsCougar() && !Orbwalking.CanAttack())
+            var OrbTarget = Orbwalker.GetTarget();
+            if(!IsCougar() && (OrbTarget == null || !OrbTarget.IsMinion))
             {
                 if (Q1.IsReady() && Menu.Item("harass_Q1").GetValue<bool>())
                     Q1.Cast(Target, true);
