@@ -28,7 +28,7 @@ namespace Skin_Changer
                 pSkins = GetSkins(ObjectManager.Player.ChampionName);
 
                 Config = new Menu("Skin Changer", "Skin Changer", true);
-                var SelectedSkin = Config.AddItem(new MenuItem("currentSkin", "").SetValue(new StringList(pSkins.Select(item => item.Value).ToArray())));
+                var SelectedSkin = Config.AddItem(new MenuItem("currentSkin", " ").SetValue(new StringList(pSkins.Select(item => item.Value).ToArray())).DontSave());
                 var SwitchSkin = Config.AddItem(new MenuItem("keySwitch", "Switch Skin").SetValue(new KeyBind("9".ToCharArray()[0], KeyBindType.Press)));
 
                 SelectedSkin.ValueChanged += (object sender, OnValueChangeEventArgs vcArgs) =>
