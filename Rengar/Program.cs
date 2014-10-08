@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using LeagueSharp;
 using LeagueSharp.Common;
+using SharpDX;
+using Color = System.Drawing.Color;
 
 namespace Rengar
 {
@@ -29,10 +31,13 @@ namespace Rengar
 
                 var Menu_STS = new Menu("Target Selector", "Target Selector");
                 SimpleTs.AddToMenu(Menu_STS);
-                Menu_STS.AddItem(new MenuItem("SearchMode", "Search Mode").SetValue(new StringList(new[] { "Default", "Near Mouse" }, 0)));
 
                 // Keys
                 var KeyBindings = new Menu("Key Bindings", "KB");
+                KeyBindings.AddItem(new MenuItem("KeysCombo", "Combo").SetValue(new KeyBind(Menu.Item("Orbwalk").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                KeyBindings.AddItem(new MenuItem("KeysMixed", "Harass").SetValue(new KeyBind(Menu.Item("Farm").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                KeyBindings.AddItem(new MenuItem("KeysLaneClear", "Lane/Jungle Clear").SetValue(new KeyBind(Menu.Item("LaneClear").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                KeyBindings.AddItem(new MenuItem("KeysLastHit", "Last Hit").SetValue(new KeyBind(Menu.Item("LastHit").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
                 KeyBindings.AddItem(new MenuItem("KeysE", "Cast E").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
 
                 // Combo
@@ -58,6 +63,12 @@ namespace Rengar
                 LastHit.AddItem(new MenuItem("LastHitE", "E").SetValue(true));
                 LastHit.AddItem(new MenuItem("FeroSpellLH", "Ferocity").SetValue(new StringList(new[] { "OFF", "W", "E" })));
 
+                // Drawings
+                var Drawings = new Menu("Drawings", "Drawings");
+                Drawings.AddItem(new MenuItem("DrawW", "W Range").SetValue(true));
+                Drawings.AddItem(new MenuItem("DrawE", "E Range").SetValue(true));
+                Drawings.AddItem(new MenuItem("DrawES", "E: Search").SetValue(true));
+
                 Menu.AddSubMenu(Menu_Orbwalker);
                 Menu.AddSubMenu(Menu_STS);
                 Menu.AddSubMenu(KeyBindings);
@@ -65,6 +76,7 @@ namespace Rengar
                 Menu.AddSubMenu(Harass);
                 Menu.AddSubMenu(LaneClear);
                 Menu.AddSubMenu(LastHit);
+                Menu.AddSubMenu(Drawings);
                 Menu.AddToMainMenu();
 
                 YGB = new Items.Item(3142, 0f);
@@ -89,13 +101,27 @@ namespace Rengar
         {
             if (Player.IsDead) return;
 
-            Utility.DrawCircle(Player.Position, E.Range, E.IsReady() ? System.Drawing.Color.Green : System.Drawing.Color.Red, 1);
-            Utility.DrawCircle(Player.Position, 1600f, System.Drawing.Color.Blue, 1);
+            var drawW = Menu.Item("DrawW").GetValue<bool>();
+            var drawE = Menu.Item("DrawE").GetValue<bool>();
+            var drawES = Menu.Item("DrawES").GetValue<bool>();
 
-            if (Menu.Item("KeysE").GetValue<KeyBind>().Active)
-                Utility.DrawCircle(Game.CursorPos, 300f, System.Drawing.Color.Yellow, 1);
-            else if (Menu.Item("SearchMode").GetValue<StringList>().SelectedIndex == 1)
-                Utility.DrawCircle(Game.CursorPos, 300f, System.Drawing.Color.Orange);
+            if (drawW)
+                Utility.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.Green : Color.Red, 1);
+
+            if (drawE)
+                Utility.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.Green : Color.Red, 1);
+
+            if (drawES && Menu.Item("KeysE").GetValue<KeyBind>().Active)
+            {
+                Vector3 SearchPosition;
+
+                if (Player.Distance(Game.CursorPos) < E.Range - 300f)
+                    SearchPosition = Game.CursorPos;
+                else
+                    SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 300f);
+
+                Utility.DrawCircle(SearchPosition, 300f, E.IsReady() ? Color.Green : Color.Red, 1);
+            }
         }
 
         private static void OnGameUpdate(EventArgs args)
@@ -103,13 +129,20 @@ namespace Rengar
             var useE = Menu.Item("KeysE").GetValue<KeyBind>();
             if (useE.Active && E.IsReady())
             {
-                var Target = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(E.Range) && hero.Distance(Game.CursorPos) < 300f).OrderBy(hero => SimpleTs.GetPriority(hero)).First();
+                Vector3 SearchPosition;
+
+                if (Player.Distance(Game.CursorPos) < E.Range - 300f)
+                    SearchPosition = Game.CursorPos;
+                else
+                    SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 300f);
+
+                var Target = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(E.Range) && hero.Distance(SearchPosition) < 300f).OrderByDescending(hero => SimpleTs.GetPriority(hero)).First();
                 if (Target.IsValid)
                     E.Cast(Target);
             }
 
 
-            switch(Orbwalker.ActiveMode)
+            switch(ActiveMode)
             {
                 case Orbwalking.OrbwalkingMode.Combo:
                     doCombo();
@@ -131,16 +164,7 @@ namespace Rengar
             var FeroSpell = Menu.Item("FeroSpellC").GetValue<StringList>();
             var ForceW = Menu.Item("ForceWC").GetValue<Slider>();
 
-            Obj_AI_Hero Target = null;
-
-            if (Menu.Item("SearchMode").GetValue<StringList>().SelectedIndex == 1)
-            {
-                Target = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(300f, true, Game.CursorPos)).OrderByDescending(hero => SimpleTs.GetPriority(hero)).First();
-            }
-            else
-            {
-                Target = SimpleTs.GetTarget(1600f, SimpleTs.DamageType.Physical);
-            }
+            var Target = SimpleTs.GetTarget(1600f, SimpleTs.DamageType.Physical);
 
             // Force Jump from Ultimate to Target
             if (Player.HasBuff("RengarR", true))
@@ -280,5 +304,26 @@ namespace Rengar
                 }
             }
         }
+
+        private static Orbwalking.OrbwalkingMode ActiveMode
+        {
+            get
+            {
+                if (Menu.Item("KeysCombo").GetValue<KeyBind>().Active)
+                    return Orbwalking.OrbwalkingMode.Combo;
+
+                if (Menu.Item("KeysLaneClear").GetValue<KeyBind>().Active)
+                    return Orbwalking.OrbwalkingMode.LaneClear;
+
+                if (Menu.Item("KeysMixed").GetValue<KeyBind>().Active)
+                    return Orbwalking.OrbwalkingMode.Mixed;
+
+                if (Menu.Item("KeysLastHit").GetValue<KeyBind>().Active)
+                    return Orbwalking.OrbwalkingMode.LastHit;
+
+                return Orbwalking.OrbwalkingMode.None;
+            }
+        }
+
     }
 }
