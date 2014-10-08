@@ -22,82 +22,89 @@ namespace Rengar
         {
             CustomEvents.Game.OnGameLoad += delegate(EventArgs eventArgs)
             {
-                if (Player.ChampionName != "Rengar") return;
+                try
+                {
+                    if (Player.ChampionName != "Rengar") return;
 
-                Menu = new Menu("Rengar", "Rengark", true);
+                    Menu = new Menu("Rengar", "Rengark", true);
 
-                var Menu_Orbwalker = new Menu("Orbwalker", "Orbwalker");
-                Orbwalker = new Orbwalking.Orbwalker(Menu_Orbwalker);
+                    var Menu_Orbwalker = new Menu("Orbwalker", "Orbwalker");
+                    Orbwalker = new Orbwalking.Orbwalker(Menu_Orbwalker);
 
-                var Menu_STS = new Menu("Target Selector", "Target Selector");
-                SimpleTs.AddToMenu(Menu_STS);
+                    var Menu_STS = new Menu("Target Selector", "Target Selector");
+                    SimpleTs.AddToMenu(Menu_STS);
 
-                // Keys
-                var KeyBindings = new Menu("Key Bindings", "KB");
-                KeyBindings.AddItem(new MenuItem("KeysCombo", "Combo").SetValue(new KeyBind(Menu.Item("Orbwalk").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
-                KeyBindings.AddItem(new MenuItem("KeysMixed", "Harass").SetValue(new KeyBind(Menu.Item("Farm").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
-                KeyBindings.AddItem(new MenuItem("KeysLaneClear", "Lane/Jungle Clear").SetValue(new KeyBind(Menu.Item("LaneClear").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
-                KeyBindings.AddItem(new MenuItem("KeysLastHit", "Last Hit").SetValue(new KeyBind(Menu.Item("LastHit").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
-                KeyBindings.AddItem(new MenuItem("KeysE", "Cast E").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
+                    // Keys
+                    var KeyBindings = new Menu("Key Bindings", "KB");
+                    KeyBindings.AddItem(new MenuItem("KeysCombo", "Combo").SetValue(new KeyBind(Menu_Orbwalker.Item("Orbwalk").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                    KeyBindings.AddItem(new MenuItem("KeysMixed", "Harass").SetValue(new KeyBind(Menu_Orbwalker.Item("Farm").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                    KeyBindings.AddItem(new MenuItem("KeysLaneClear", "Lane/Jungle Clear").SetValue(new KeyBind(Menu_Orbwalker.Item("LaneClear").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                    KeyBindings.AddItem(new MenuItem("KeysLastHit", "Last Hit").SetValue(new KeyBind(Menu_Orbwalker.Item("LastHit").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
+                    KeyBindings.AddItem(new MenuItem("KeysE", "Cast E").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
 
-                // Combo
-                var Combo = new Menu("Combo", "Combo");
-                Combo.AddItem(new MenuItem("FeroSpellC", "Ferocity").SetValue(new StringList(new[] { "Q", "W", "E" }, 2)));
-                Combo.AddItem(new MenuItem("ForceWC", "Force W %HP").SetValue(new Slider(30)));
+                    // Combo
+                    var Combo = new Menu("Combo", "Combo");
+                    Combo.AddItem(new MenuItem("FeroSpellC", "Ferocity").SetValue(new StringList(new[] { "Q", "W", "E" }, 2)));
+                    Combo.AddItem(new MenuItem("ForceWC", "Force W %HP").SetValue(new Slider(30)));
 
-                // Harass
-                var Harass = new Menu("Harass", "Harass");
-                Harass.AddItem(new MenuItem("HarassW", "W").SetValue(true));
-                Harass.AddItem(new MenuItem("HarassE", "E").SetValue(true));
-                Harass.AddItem(new MenuItem("FeroSpellH", "Ferocity").SetValue(new StringList(new[] { "OFF", "W", "E" })));
-                
-                // Lane Clear
-                var LaneClear = new Menu("Lane/Jungle Clear", "LJC");
-                LaneClear.AddItem(new MenuItem("FeroSaveRRdy", "Save 5 Ferocity").SetValue(true));
-                LaneClear.AddItem(new MenuItem("FeroSpellF", "Ferocity").SetValue(new StringList(new[] { "Q", "W", "E" }, 1)));
-                LaneClear.AddItem(new MenuItem("ForceWF", "Force W %HP").SetValue(new Slider(70)));
+                    // Harass
+                    var Harass = new Menu("Harass", "Harass");
+                    Harass.AddItem(new MenuItem("HarassW", "W").SetValue(true));
+                    Harass.AddItem(new MenuItem("HarassE", "E").SetValue(true));
+                    Harass.AddItem(new MenuItem("FeroSpellH", "Ferocity").SetValue(new StringList(new[] { "OFF", "W", "E" })));
 
-                // LastHit
-                var LastHit = new Menu("Last Hit", "LH");
-                LastHit.AddItem(new MenuItem("LastHitW", "W").SetValue(true));
-                LastHit.AddItem(new MenuItem("LastHitE", "E").SetValue(true));
-                LastHit.AddItem(new MenuItem("FeroSpellLH", "Ferocity").SetValue(new StringList(new[] { "OFF", "W", "E" })));
+                    // Lane Clear
+                    var LaneClear = new Menu("Lane/Jungle Clear", "LJC");
+                    LaneClear.AddItem(new MenuItem("FeroSaveRRdy", "Save 5 Ferocity").SetValue(true));
+                    LaneClear.AddItem(new MenuItem("FeroSpellF", "Ferocity").SetValue(new StringList(new[] { "Q", "W", "E" }, 1)));
+                    LaneClear.AddItem(new MenuItem("ForceWF", "Force W %HP").SetValue(new Slider(70)));
 
-                // Drawings
-                var Drawings = new Menu("Drawings", "Drawings");
-                Drawings.AddItem(new MenuItem("DrawW", "W Range").SetValue(true));
-                Drawings.AddItem(new MenuItem("DrawE", "E Range").SetValue(true));
-                Drawings.AddItem(new MenuItem("DrawES", "E: Search").SetValue(true));
+                    // LastHit
+                    var LastHit = new Menu("Last Hit", "LH");
+                    LastHit.AddItem(new MenuItem("LastHitW", "W").SetValue(true));
+                    LastHit.AddItem(new MenuItem("LastHitE", "E").SetValue(true));
+                    LastHit.AddItem(new MenuItem("FeroSpellLH", "Ferocity").SetValue(new StringList(new[] { "OFF", "W", "E" })));
 
-                Menu.AddSubMenu(Menu_Orbwalker);
-                Menu.AddSubMenu(Menu_STS);
-                Menu.AddSubMenu(KeyBindings);
-                Menu.AddSubMenu(Combo);
-                Menu.AddSubMenu(Harass);
-                Menu.AddSubMenu(LaneClear);
-                Menu.AddSubMenu(LastHit);
-                Menu.AddSubMenu(Drawings);
-                Menu.AddToMainMenu();
+                    // Drawings
+                    var Drawings = new Menu("Drawings", "Drawings");
+                    Drawings.AddItem(new MenuItem("DrawW", "W Range").SetValue(true));
+                    Drawings.AddItem(new MenuItem("DrawE", "E Range").SetValue(true));
+                    Drawings.AddItem(new MenuItem("DrawES", "E: Search").SetValue(true));
 
-                YGB = new Items.Item(3142, 0f);
-                TMT = new Items.Item(3077, 400f);
-                HYD = new Items.Item(3074, 400f);
+                    Menu.AddSubMenu(Menu_Orbwalker);
+                    Menu.AddSubMenu(Menu_STS);
+                    Menu.AddSubMenu(KeyBindings);
+                    Menu.AddSubMenu(Combo);
+                    Menu.AddSubMenu(Harass);
+                    Menu.AddSubMenu(LaneClear);
+                    Menu.AddSubMenu(LastHit);
+                    Menu.AddSubMenu(Drawings);
+                    Menu.AddToMainMenu();
 
-                Q = new Spell(SpellSlot.Q);
-                W = new Spell(SpellSlot.W, 500f);
-                E = new Spell(SpellSlot.E, 1000f);
-                R = new Spell(SpellSlot.R);
+                    YGB = new Items.Item(3142, 0f);
+                    TMT = new Items.Item(3077, 400f);
+                    HYD = new Items.Item(3074, 400f);
 
-                E.SetSkillshot(.5f, 70f, 1500f, true, SkillshotType.SkillshotLine);
+                    Q = new Spell(SpellSlot.Q);
+                    W = new Spell(SpellSlot.W, 500f);
+                    E = new Spell(SpellSlot.E, 1000f);
+                    R = new Spell(SpellSlot.R);
 
-                Game.PrintChat("<font color=\"#0066FF\">[<font color=\"#FFFFFF\">madk</font>]</font><font color=\"#FFFFFF\"> Rengar assembly loaded! :^)</font>");
+                    E.SetSkillshot(.5f, 70f, 1500f, true, SkillshotType.SkillshotLine);
 
-                Game.OnGameUpdate += OnGameUpdate;
-                Drawing.OnDraw += Drawing_OnDraw;
+                    Game.PrintChat("<font color=\"#0066FF\">[<font color=\"#FFFFFF\">madk</font>]</font><font color=\"#FFFFFF\"> Rengar assembly loaded! :^)</font>");
+
+                    Game.OnGameUpdate += OnGameUpdate;
+                    Drawing.OnDraw += OnDraw;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             };
         }
 
-        private static void Drawing_OnDraw(EventArgs args)
+        private static void OnDraw(EventArgs args)
         {
             if (Player.IsDead) return;
 
@@ -106,21 +113,21 @@ namespace Rengar
             var drawES = Menu.Item("DrawES").GetValue<bool>();
 
             if (drawW)
-                Utility.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.Green : Color.Red, 1);
+                Utility.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.Green : Color.Red);
 
             if (drawE)
-                Utility.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.Green : Color.Red, 1);
+                Utility.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.Green : Color.Red);
 
             if (drawES && Menu.Item("KeysE").GetValue<KeyBind>().Active)
             {
                 Vector3 SearchPosition;
 
-                if (Player.Distance(Game.CursorPos) < E.Range - 300f)
+                if (Player.Distance(Game.CursorPos) < E.Range - 200f)
                     SearchPosition = Game.CursorPos;
                 else
-                    SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 300f);
+                    SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 200f);
 
-                Utility.DrawCircle(SearchPosition, 300f, E.IsReady() ? Color.Green : Color.Red, 1);
+                Utility.DrawCircle(SearchPosition, 200f, E.IsReady() ? Color.Green : Color.Red);
             }
         }
 
@@ -131,12 +138,12 @@ namespace Rengar
             {
                 Vector3 SearchPosition;
 
-                if (Player.Distance(Game.CursorPos) < E.Range - 300f)
+                if (Player.Distance(Game.CursorPos) < E.Range - 200f)
                     SearchPosition = Game.CursorPos;
                 else
-                    SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 300f);
+                    SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 200f);
 
-                var Target = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(E.Range) && hero.Distance(SearchPosition) < 300f).OrderByDescending(hero => SimpleTs.GetPriority(hero)).First();
+                var Target = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(E.Range) && hero.Distance(SearchPosition) < 200f).OrderByDescending(hero => SimpleTs.GetPriority(hero)).First();
                 if (Target.IsValid)
                     E.Cast(Target);
             }
