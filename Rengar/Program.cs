@@ -41,7 +41,8 @@ namespace Rengar
                     KeyBindings.AddItem(new MenuItem("KeysLaneClear", "Lane/Jungle Clear").SetValue(new KeyBind(Menu_Orbwalker.Item("LaneClear").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
                     KeyBindings.AddItem(new MenuItem("KeysLastHit", "Last Hit").SetValue(new KeyBind(Menu_Orbwalker.Item("LastHit").GetValue<KeyBind>().Key, KeyBindType.Press, false)));
                     KeyBindings.AddItem(new MenuItem("KeysE", "Cast E").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
-
+                    var FeroSwitcher = KeyBindings.AddItem(new MenuItem("KeysFS", "Switch Ferocity spell").SetValue(new KeyBind("N".ToCharArray()[0], KeyBindType.Press)));
+                    
                     // Combo
                     var Combo = new Menu("Combo", "Combo");
                     Combo.AddItem(new MenuItem("FeroSpellC", "Ferocity").SetValue(new StringList(new[] { "Q", "W", "E" }, 2)));
@@ -70,6 +71,7 @@ namespace Rengar
                     Drawings.AddItem(new MenuItem("DrawW", "W Range").SetValue(true));
                     Drawings.AddItem(new MenuItem("DrawE", "E Range").SetValue(true));
                     Drawings.AddItem(new MenuItem("DrawES", "E: Search").SetValue(true));
+                    Drawings.AddItem(new MenuItem("DrawFS", "Ferocity Spell").SetValue(true));
 
                     Menu.AddSubMenu(Menu_Orbwalker);
                     Menu.AddSubMenu(Menu_STS);
@@ -96,6 +98,16 @@ namespace Rengar
 
                     Game.OnGameUpdate += OnGameUpdate;
                     Drawing.OnDraw += OnDraw;
+
+                    FeroSwitcher.ValueChanged += delegate(object sender, OnValueChangeEventArgs vcArgs)
+                    {
+                        if (vcArgs.GetOldValue<KeyBind>().Active) return;
+
+                        var FeroSpell = Menu.Item("FeroSpellC");
+                        var OldValues = FeroSpell.GetValue<StringList>();
+                        var NewValue = OldValues.SelectedIndex + 1 >= OldValues.SList.Count() ? 0 : OldValues.SelectedIndex + 1;
+                        FeroSpell.SetValue(new StringList(OldValues.SList, NewValue));
+                    };
                 }
                 catch (Exception ex)
                 {
@@ -111,6 +123,7 @@ namespace Rengar
             var drawW = Menu.Item("DrawW").GetValue<bool>();
             var drawE = Menu.Item("DrawE").GetValue<bool>();
             var drawES = Menu.Item("DrawES").GetValue<bool>();
+            var drawFS = Menu.Item("DrawFS").GetValue<bool>();
 
             if (drawW)
                 Utility.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.Green : Color.Red);
@@ -128,6 +141,12 @@ namespace Rengar
                     SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 200f);
 
                 Utility.DrawCircle(SearchPosition, 200f, E.IsReady() ? Color.Green : Color.Red);
+            }
+
+            if (drawFS)
+            {
+                var FeroSpell = Menu.Item("FeroSpellC").GetValue<StringList>();
+                Drawing.DrawText(10, (Drawing.Height * 0.85f), Color.YellowGreen, "Ferocity Spell: {0}", FeroSpell.SList[FeroSpell.SelectedIndex]);   
             }
         }
 
