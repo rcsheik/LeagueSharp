@@ -13,10 +13,12 @@ namespace Rengar
     class Program
     {
         private static Obj_AI_Hero Player = ObjectManager.Player;
+        private static Items.Item YGB, TMT, HYD, BCL, BRK, DFG;
         private static Orbwalking.Orbwalker Orbwalker;
-        private static Menu Menu;
         private static Spell Q, W, E, R;
-        private static Items.Item YGB, TMT, HYD;
+        private static Menu Menu;
+
+        private static float LastETick;
 
         private static void Main(string[] args)
         {
@@ -25,6 +27,8 @@ namespace Rengar
                 try
                 {
                     if (Player.ChampionName != "Rengar") return;
+
+                    #region Menu 
 
                     Menu = new Menu("Rengar", "Rengark", true);
 
@@ -47,6 +51,7 @@ namespace Rengar
                     var Combo = new Menu("Combo", "Combo");
                     Combo.AddItem(new MenuItem("FeroSpellC", "Ferocity").SetValue(new StringList(new[] { "Q", "W", "E" }, 2)));
                     Combo.AddItem(new MenuItem("ForceWC", "Force W %HP").SetValue(new Slider(30)));
+                    Combo.AddItem(new MenuItem("ForceEC", "Force E").SetValue(false));
 
                     // Harass
                     var Harass = new Menu("Harass", "Harass");
@@ -71,6 +76,7 @@ namespace Rengar
                     Drawings.AddItem(new MenuItem("DrawW", "W Range").SetValue(true));
                     Drawings.AddItem(new MenuItem("DrawE", "E Range").SetValue(true));
                     Drawings.AddItem(new MenuItem("DrawES", "E: Search").SetValue(true));
+                    Drawings.AddItem(new MenuItem("DrawUR", "R").SetValue(new StringList(new[] { "Off", "Normal", "Minimap", "Both"}, 2)));
                     Drawings.AddItem(new MenuItem("DrawFS", "Ferocity Spell").SetValue(true));
 
                     Menu.AddSubMenu(Menu_Orbwalker);
@@ -83,9 +89,20 @@ namespace Rengar
                     Menu.AddSubMenu(Drawings);
                     Menu.AddToMainMenu();
 
-                    YGB = new Items.Item(3142, 0f);
-                    TMT = new Items.Item(3077, 400f);
-                    HYD = new Items.Item(3074, 400f);
+                    #endregion
+
+                    #region Items 
+
+                    YGB = new Items.Item(3142, 0f);     // Ghostblade
+                    TMT = new Items.Item(3077, 400f);   // Tiamat
+                    HYD = new Items.Item(3074, 400f);   // Hydra
+                    BCL = new Items.Item(3144, 450f);   // Cutlass
+                    BRK = new Items.Item(3153, 450f);   // Blade of the Ruined King
+                    DFG = new Items.Item(GetDFG(), 750f); // Deathfire Grasp
+                    
+                    #endregion
+
+                    #region Spells 
 
                     Q = new Spell(SpellSlot.Q);
                     W = new Spell(SpellSlot.W, 500f);
@@ -94,10 +111,16 @@ namespace Rengar
 
                     E.SetSkillshot(.5f, 70f, 1500f, true, SkillshotType.SkillshotLine);
 
+                    #endregion
+
                     Game.PrintChat("<font color=\"#0066FF\">[<font color=\"#FFFFFF\">madk</font>]</font><font color=\"#FFFFFF\"> Rengar assembly loaded! :^)</font>");
 
                     Game.OnGameUpdate += OnGameUpdate;
+                    Obj_AI_Hero.OnProcessSpellCast += OnProcessSpell;
                     Drawing.OnDraw += OnDraw;
+                    Drawing.OnEndScene += OnDraw_EndScene;
+
+
 
                     FeroSwitcher.ValueChanged += delegate(object sender, OnValueChangeEventArgs vcArgs)
                     {
@@ -119,18 +142,22 @@ namespace Rengar
         private static void OnDraw(EventArgs args)
         {
             if (Player.IsDead) return;
-
+            
             var drawW = Menu.Item("DrawW").GetValue<bool>();
             var drawE = Menu.Item("DrawE").GetValue<bool>();
             var drawES = Menu.Item("DrawES").GetValue<bool>();
             var drawFS = Menu.Item("DrawFS").GetValue<bool>();
+            var drawUR = Menu.Item("DrawUR").GetValue<StringList>();
 
+            // W Range
             if (drawW)
                 Utility.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.Green : Color.Red);
 
+            // E Range
             if (drawE)
                 Utility.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.Green : Color.Red);
 
+            // E Search Position
             if (drawES && Menu.Item("KeysE").GetValue<KeyBind>().Active)
             {
                 Vector3 SearchPosition;
@@ -143,11 +170,37 @@ namespace Rengar
                 Utility.DrawCircle(SearchPosition, 200f, E.IsReady() ? Color.Green : Color.Red);
             }
 
+            // Ultimate Range
+            if (R.Level > 0 && (drawUR.SelectedIndex == 1 || drawUR.SelectedIndex == 3))
+                Utility.DrawCircle(Player.Position, 1000f + 1000f * R.Level, Color.Green, 10);
+
+            // Ferocity Spell
             if (drawFS)
             {
                 var FeroSpell = Menu.Item("FeroSpellC").GetValue<StringList>();
-                Drawing.DrawText(10, (Drawing.Height * 0.85f), Color.YellowGreen, "Ferocity Spell: {0}", FeroSpell.SList[FeroSpell.SelectedIndex]);   
+
+                int posX = 0;
+                if (Drawing.WorldToMinimap(new Vector3()).X < Drawing.Width / 2)
+                    posX = Drawing.Width - 140;
+                else
+                    posX = 10;
+
+                Drawing.DrawText(posX, (Drawing.Height * 0.85f), Color.YellowGreen, "Ferocity Spell: {0}", FeroSpell.SList[FeroSpell.SelectedIndex]);
             }
+        }
+
+        private static void OnDraw_EndScene(EventArgs args)
+        {
+            var drawUR = Menu.Item("DrawUR").GetValue<StringList>();
+
+            if (drawUR.SelectedIndex > 1 && R.Level > 0)
+                Utility.DrawCircle(Player.Position, 1000f + 1000f * R.Level, Color.Green, 1, 30, true);
+        }
+
+        private static void OnProcessSpell(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (sender.IsMe && args.SData.Name == "RengarE")
+                LastETick = Environment.TickCount;
         }
 
         private static void OnGameUpdate(EventArgs args)
@@ -155,6 +208,7 @@ namespace Rengar
             var useE = Menu.Item("KeysE").GetValue<KeyBind>();
             if (useE.Active && E.IsReady())
             {
+                var ForceE = Menu.Item("ForceEC").GetValue<bool>();
                 Vector3 SearchPosition;
 
                 if (Player.Distance(Game.CursorPos) < E.Range - 200f)
@@ -163,10 +217,9 @@ namespace Rengar
                     SearchPosition = Player.Position + Vector3.Normalize(Game.CursorPos - Player.Position) * (E.Range - 200f);
 
                 var Target = ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(E.Range) && hero.Distance(SearchPosition) < 200f).OrderByDescending(hero => SimpleTs.GetPriority(hero)).First();
-                if (Target.IsValid)
+                if (Target.IsValid && (!Target.HasBuff("RengarEFinalMAX", true) && !Target.HasBuff("rengareslow") && LastETick + 1500 < Environment.TickCount || ForceE))
                     E.Cast(Target);
             }
-
 
             switch(ActiveMode)
             {
@@ -189,14 +242,13 @@ namespace Rengar
         {
             var FeroSpell = Menu.Item("FeroSpellC").GetValue<StringList>();
             var ForceW = Menu.Item("ForceWC").GetValue<Slider>();
+            var ForceE = Menu.Item("ForceEC").GetValue<bool>();
 
             var Target = SimpleTs.GetTarget(1600f, SimpleTs.DamageType.Physical);
 
-            // Force Jump from Ultimate to Target
             if (Player.HasBuff("RengarR", true))
-                Orbwalker.SetAttacks(Target == Orbwalker.GetTarget());
-            else
-                Orbwalker.SetAttacks(true);
+                Orbwalker.ForceTarget(Target);
+
 
             // Use Tiamat / Hydra
             if (Target.IsValidTarget(TMT.Range))
@@ -206,6 +258,18 @@ namespace Rengar
             // Use Yommus Ghostblade
             if (YGB.IsReady() && Target.IsValidTarget(Orbwalking.GetRealAutoAttackRange(Player)))
                 YGB.Cast();
+
+            // Cutlass
+            if (BCL.IsReady() && Target.IsValidTarget(BCL.Range))
+                BCL.Cast(Target);
+
+            // BORK
+            if (BRK.IsReady() && Target.IsValidTarget(BRK.Range))
+                BRK.Cast(Target);
+
+            // DFG
+            if (W.IsReady() && DFG.IsReady() && Target.IsValidTarget(DFG.Range))
+                DFG.Cast(Target);
 
             // Ferocity Spell
             if (Player.Mana == 5)
@@ -245,8 +309,8 @@ namespace Rengar
             if (Player.HasBuff("RengarR", true))
                 return;
 
-            if (E.IsReady() && Target.IsValidTarget(E.Range))
-                E.Cast(Target);
+            if (E.IsReady() && Target.IsValidTarget(E.Range) && (!Target.HasBuff("RengarEFinalMAX", true) && !Target.HasBuff("rengareslow") && LastETick + 1500 < Environment.TickCount || ForceE))
+                    E.Cast(Target);
 
             if (W.IsReady() && Target.IsValidTarget(W.Range))
                 W.Cast();
@@ -351,5 +415,13 @@ namespace Rengar
             }
         }
 
+        private static int GetDFG()
+        {
+            var map = Utility.Map.GetMap()._MapType;
+            if (map == Utility.Map.MapType.TwistedTreeline || map == Utility.Map.MapType.CrystalScar)
+                return 3128;
+            else 
+                return 3188;
+        }
     }
 }
